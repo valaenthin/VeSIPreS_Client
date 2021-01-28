@@ -61,9 +61,10 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_gravity="bottom"
-        android:background="@color/colorAccent"
-        android:enabled="true"
         android:layout_margin="16dp"
-        android:text="Compare two measurements" />
+        android:background="@color/colorPrimary"
+        android:enabled="true"
+        android:text="Compare measurements"
+        android:textColor="#FFFFFF" />
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

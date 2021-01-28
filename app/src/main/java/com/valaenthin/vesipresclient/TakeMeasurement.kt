@@ -3,6 +3,7 @@ package com.valaenthin.vesipresclient
 import android.os.Bundle
 import android.util.Log.d
 import android.view.View
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
 import kotlinx.android.synthetic.main.activity_take_measurement.*
@@ -26,10 +27,17 @@ class TakeMeasurement : AppCompatActivity() {
         }
 
         lifecycleScope.launch(Dispatchers.Default) {
-            val ip_address = "192.168.0.101"
+            val ip_address = "192.168.43.229"    // "192.168.0.101"
             val ip_port = 7777
             logAppend("connect to address $ip_address on port $ip_port...")
-            val connection = Socket(ip_address, ip_port)
+//            try {
+                val connection = Socket(ip_address, ip_port)
+//            } catch ( IOException e:IOException) {
+//                finish()
+//                Toast.makeText(applicationContext, "Server cannot be reached", Toast.LENGTH_SHORT).show()
+//                return@launch
+//            }
+
             val reader = Scanner(connection.getInputStream())
             val writer = connection.getOutputStream()
             logAppend("socket opened")
@@ -41,8 +49,8 @@ class TakeMeasurement : AppCompatActivity() {
             val nonce = secureRandom.nextLong()
             logAppend("Nonce: ${nonce.toString()}")  // TO DELETE: this line causes crashes
             jSend.put("Request", 1)
-            jSend.put("Nonce", nonce)
-            logAppend("JSON: ${jSend.toString()}\n")
+            jSend.put("NonceG", nonce)
+            logAppend("RequestJSON: ${jSend.toString()}\n")
             writer.write(jSend.toString().toByteArray())
 
 
@@ -52,16 +60,25 @@ class TakeMeasurement : AppCompatActivity() {
 //                data_recv.plus(reader.nextLine())
 //                break
 //            }
-            logAppend("received answer: $data_recv")
+            //logAppend("answer received:\n$data_recv")
             val jReceive = JSONObject(data_recv)
-            logAppend("received answer JSON: ${jReceive.toString()}")
+//  The integrity of the data has to be evaluated at this point:
+            //
 
+// At the moment not all information are stored. Need to change this
             logAppend("store measurement...")
-            measurements.add(Measurement("Measurement ${measurements.size}", LocalDateTime.now(),1,2,3,4,5))
+            measurements.add(Measurement(
+                "Measurement ${measurements.size}",
+                LocalDateTime.now(),
+                1,
+                jReceive.getString("Pcr"),
+                jReceive.getJSONArray("EcuReport").getJSONObject(0).getString("digest"),
+                jReceive.getJSONArray("EcuReport").getJSONObject(1).getString("digest"),,
+                jReceive.getJSONArray("EcuReport").getJSONObject(2).getString("digest")))
             reader.close()
             connection.close()
 
-            logAppend(measurements.toString())
+            logAppend("Stored data:\n${measurements.last().toString()}")
 
 
             runOnUiThread {
@@ -79,7 +96,7 @@ class TakeMeasurement : AppCompatActivity() {
     }
 
     fun logAppend(s: String) {
-        d("ValiTake",s)
+        d("ValDebugMsgTake",s)
         runOnUiThread {
             logMeasure.append("$s\n")
         }
